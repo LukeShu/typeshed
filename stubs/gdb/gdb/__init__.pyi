@@ -669,7 +669,17 @@ class LineTable:
 
 # Breakpoints
 
+# The list of `case`s in the big `switch` block in py-breakpoint.c:bppy_init().
+_BreakpointType_NonWatchpoint: TypeAlias = Literal[BP_BREAKPOINT, BP_HARDWARE_BREAKPOINT, BP_CATCHPOINT]
+_BreakpointType_Watchpoint: TypeAlias = Literal[BP_WATCHPOINT]
+
+_WatchpointClass: TypeAlias = Literal[WP_READ, WP_WRITE, WP_ACCESS]
+
 class Breakpoint:
+    # These type hints exclude the `wp_class` (watchpoint class) option from all of the forms of __init__() that don't have
+    # `type=BP_WATCHPOINT`, even though py-breakpoints.c accepts `wp_class` no matter what.  It doesn't make sense unless
+    # type==BP_WATCHPOINT, and is silently ignored in those cases; allowing it in those cases is likely an oversight, not an
+    # intentional allowance.
 
     # The where="spec" form of __init__().  See py-breakpoints.c:bppy_init():keywords for the positional order.
     @overload
@@ -678,18 +688,25 @@ class Breakpoint:
         # where
         spec: str,
         # options
-        type: int = ...,
-        wp_class: int = ...,
+        type: _BreakpointType_NonWatchpoint = ...,
+        internal: bool = ...,
+        temporary: bool = ...,
+        qualified: bool = ...,
+    ) -> None: ...
+    @overload
+    def __init__(
+        self,
+        # where
+        spec: str,
+        # options
+        type: _BreakpointType_Watchpoint = ...,
+        wp_class: _WatchpointClass = ...,
         internal: bool = ...,
         temporary: bool = ...,
         qualified: bool = ...,
     ) -> None: ...
 
     # The where="location" form of __init__().  A watchpoint (`type=BP_WATCHPOINT`) cannot be created with this form.
-    #
-    # We exclude the `wp_class` (watchpoint class) option here, even though py-breakpoints.c accepts it.  It doesn't make sense
-    # unless type==BP_WATCHPOINT, and is silently ignored in those cases; allowing it in those cases is likely an oversight, not
-    # an intentional allowance.
     #
     # We repeat this 7 times because the type system doesn't have simple a way for us to say "at least one of `function`, `label`,
     # or `line`", so we must repeat it for each combination of the 3.
@@ -705,7 +722,7 @@ class Breakpoint:
         label: str,
         line: int | str,
         # options
-        type: int = ...,
+        type: _BreakpointType_NonWatchpoint = ...,
         internal: bool = ...,
         temporary: bool = ...,
         qualified: bool = ...,
@@ -720,7 +737,7 @@ class Breakpoint:
         label: str,
         line: int | str,
         # options
-        type: int = ...,
+        type: _BreakpointType_NonWatchpoint = ...,
         internal: bool = ...,
         temporary: bool = ...,
         qualified: bool = ...,
@@ -734,7 +751,7 @@ class Breakpoint:
         function: str,
         line: int | str,
         # options
-        type: int = ...,
+        type: _BreakpointType_NonWatchpoint = ...,
         internal: bool = ...,
         temporary: bool = ...,
         qualified: bool = ...,
@@ -748,7 +765,7 @@ class Breakpoint:
         function: str,
         label: str,
         # options
-        type: int = ...,
+        type: _BreakpointType_NonWatchpoint = ...,
         internal: bool = ...,
         temporary: bool = ...,
         qualified: bool = ...,
@@ -762,7 +779,7 @@ class Breakpoint:
         # where
         function: str,
         # options
-        type: int = ...,
+        type: _BreakpointType_NonWatchpoint = ...,
         internal: bool = ...,
         temporary: bool = ...,
         qualified: bool = ...,
@@ -775,7 +792,7 @@ class Breakpoint:
         # where
         label: str,
         # options
-        type: int = ...,
+        type: _BreakpointType_NonWatchpoint = ...,
         internal: bool = ...,
         temporary: bool = ...,
         qualified: bool = ...,
@@ -788,7 +805,7 @@ class Breakpoint:
         # where
         line: int | str,
         # options
-        type: int = ...,
+        type: _BreakpointType_NonWatchpoint = ...,
         internal: bool = ...,
         temporary: bool = ...,
         qualified: bool = ...,
