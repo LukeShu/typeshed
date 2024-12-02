@@ -12,7 +12,6 @@ from typing_extensions import TypeAlias, deprecated
 
 import gdb.FrameDecorator
 import gdb.types
-import gdb.unwinder
 import gdb.xmethod
 
 # The following submodules are automatically imported
@@ -289,7 +288,14 @@ class PendingFrame:
 class UnwindInfo:
     def add_saved_register(self, reg: str | RegisterDescriptor | int, value: Value, /) -> None: ...
 
-frame_unwinders: list[gdb.unwinder.Unwinder]
+class _Unwinder(Protocol):
+    @property
+    def name(self) -> str: ...
+    enabled: bool
+
+    def __call__(self, pending_frame: PendingFrame) -> UnwindInfo | None: ...
+
+frame_unwinders: list[_Unwinder]
 
 # Inferiors
 
@@ -468,7 +474,7 @@ class Progspace:
     pretty_printers: list[_PrettyPrinterLookupFunction]
     type_printers: list[gdb.types._TypePrinter]
     frame_filters: dict[str, _FrameFilter]
-    frame_unwinders: list[gdb.unwinder.Unwinder]
+    frame_unwinders: list[_Unwinder]
     missing_debug_handlers: Incomplete
 
     def block_for_pc(self, pc: int, /) -> Block | None: ...
@@ -493,7 +499,7 @@ class Objfile:
     pretty_printers: list[_PrettyPrinterLookupFunction]
     type_printers: list[gdb.types._TypePrinter]
     frame_filters: dict[str, _FrameFilter]
-    frame_unwinders: list[gdb.unwinder.Unwinder]
+    frame_unwinders: list[_Unwinder]
     is_file: bool
 
     def is_valid(self) -> bool: ...
